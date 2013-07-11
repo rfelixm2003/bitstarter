@@ -6,11 +6,19 @@ var app = express.createServer(express.logger());
 
 var fs = require('fs');
 
-var content;
+//var content;
+
+// First I want to read the file
+fs.readFile('./index.html', function read(err, data) {
+    if (err) {
+        throw err;
+    }
+    content = data;
+});
 
 app.get('/', function(request, response) {
-  
- response.send("hello");
+
+ response.send(content.toString('utf8'));
 
 
 });//app.get end
