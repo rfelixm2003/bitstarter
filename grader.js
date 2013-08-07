@@ -26,6 +26,32 @@ var program = require('commander');
 var cheerio = require('cheerio');
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
+var URL_FILE = "url.html";
+var URL_DEFAULT = "";
+
+/*new variable for restler */
+
+var rest = require('restler');
+
+var data;
+var url_entered = 0;
+
+var first_step = function(a) {
+    
+   /* console.log(a);*/
+
+    rest.get(a).on('complete',function(result){
+
+	 data = result;
+
+fs.appendFile(URL_FILE, data, function (err) {
+  if (err) throw err;
+ });
+	 /*console.log(data);*/
+
+    });
+   
+};
 
 var assertFileExists = function(infile) {
     var instr = infile.toString();
@@ -39,6 +65,10 @@ var assertFileExists = function(infile) {
 var cheerioHtmlFile = function(htmlfile) {
     return cheerio.load(fs.readFileSync(htmlfile));
 };
+/*
+var cheerioURL = function(URL_data) {
+    return cheerio.load(fs.readFileSync(URL_data));
+};*/
 
 var loadChecks = function(checksfile) {
     return JSON.parse(fs.readFileSync(checksfile));
@@ -55,6 +85,19 @@ var checkHtmlFile = function(htmlfile, checksfile) {
     return out;
 };
 
+/*
+var checkURL = function(URL_data, checksfile) {
+    $ = cheerioURL(URL_data);
+    var checks = loadChecks(checksfile).sort();
+    var out = {};
+    for(var ii in checks) {
+        var present = $(checks[ii]).length > 0;
+        out[checks[ii]] = present;
+    }
+    return out;
+};*/
+
+
 var clone = function(fn) {
     // Workaround for commander.js issue.
     // http://stackoverflow.com/a/6772648
@@ -65,9 +108,30 @@ if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
+	.option('-u, --url <url>', 'URL',URL_DEFAULT)
         .parse(process.argv);
-    var checkJson = checkHtmlFile(program.file, program.checks);
-    var outJson = JSON.stringify(checkJson, null, 4);
+
+   /* console.log(program.file);
+    console.log(program.checks);
+    console.log(program.url);*/
+    a = program.url;
+    
+    if (program.url!=URL_DEFAULT){
+	first_step(a);
+	url_entered = 1;
+	}
+
+    if (url_entered==1){
+	var checkJson = checkHtmlFile(URL_FILE, program.checks);
+	var outJson = JSON.stringify(checkJson, null, 4);
+    }
+        
+    else{
+	var checkJson = checkHtmlFile(program.file, program.checks);
+	var outJson = JSON.stringify(checkJson, null, 4);
+    }
+
+    
     console.log(outJson);
 } else {
     exports.checkHtmlFile = checkHtmlFile;
